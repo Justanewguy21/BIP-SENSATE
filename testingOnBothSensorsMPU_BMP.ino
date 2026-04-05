@@ -5,7 +5,6 @@
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
 
-LiquidCrystal_I2C lcd(0x27, 16, 2);
 #define SDA_PIN 21 // need to defind the sda pin for lcd
 #define SCL_PIN 22 // need to defind the scl (serial clock) for lcd 
 
@@ -27,28 +26,7 @@ struct MPU6500Data {
   float ay;
   float az;
 };    
-
-
-void setup() {
-  Serial.begin(115200);
-  delay(1000);
-  Wire.begin();
-  Wire.setClock(400000); // set the max clock f to 400kHz
-  
-  // BMP280
-  bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
-                  Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
-                  Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
-                  Adafruit_BMP280::FILTER_X16,      /* Filtering. */
-                  Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */  
-
-  /* I2C bus,  0x68 address */
-  imu.Config(&Wire, bfs::Mpu6500::I2C_ADDR_PRIM);
-  /* Initialize and configure IMU */
-}
-
-
-
+// I don't know but these two read functions need to put on top first to avoid return Nan Value
 BMP280Data readBMP280() {
   BMP280Data data;
   data.temp     = bmp.readTemperature(); 
@@ -59,11 +37,34 @@ BMP280Data readBMP280() {
 
 MPU6500Data readMPU6500() {
   MPU6500Data data;
-  data.ax = imu.accel_x_mps2();
-  data.ay = imu.accel_y_mps2();
-  data.az = imu.accel_z_mps2();
+  if (imu.Read()) {    // If else condition to check for new data before reading is needed in MPU6500
+    data.ax = imu.accel_x_mps2();
+    data.ay = imu.accel_y_mps2();
+    data.az = imu.accel_z_mps2();
+  }
   return data;
 }
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+  Wire.begin();
+  Wire.setClock(400000); // set the max clock f to 400kHz
+  bmp.begin(0x76);
+  // BMP280
+  bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
+                  Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
+                  Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
+                  Adafruit_BMP280::FILTER_X16,      /* Filtering. */
+                  Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */  
+
+  /* I2C bus,  0x68 address */
+  imu.Config(&Wire, bfs::Mpu6500::I2C_ADDR_PRIM);
+  /* Initialize and configure IMU */
+  imu.Begin();
+  imu.ConfigSrd(19);
+}
+
 
 
 void loop() {
@@ -77,6 +78,7 @@ void loop() {
   Serial.print("  Accel X  : "); Serial.print(mpuData.ax, 3); Serial.println(" m/s2");
   Serial.print("  Accel Y  : "); Serial.print(mpuData.ay, 3); Serial.println(" m/s2");
   Serial.print("  Accel Z  : "); Serial.print(mpuData.az, 3); Serial.println(" m/s2");
+  
 
   Serial.println("-------------------");
   delay(1000);
