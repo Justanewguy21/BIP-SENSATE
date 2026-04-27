@@ -1,5 +1,5 @@
 %% Getting data from url
-url = "http://192.168.0.247/data";
+url = "..url";
 opts = weboptions("Timeout", 50, "ContentType", "text");
 raw = webread(url)
 %% extracting data
